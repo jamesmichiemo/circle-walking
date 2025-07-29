@@ -316,8 +316,8 @@
             scheduleNext() {
                 if (!this.isRunning) return;
                 
-                // Random wait time between 2-10 seconds
-                const waitTime = Math.floor(Math.random() * 9) + 2;
+                // Random wait time between 2-30 seconds
+                const waitTime = Math.floor(Math.random() * 29) + 2;
                 
                 // Select random phrase
                 const phrase = this.phrases[Math.floor(Math.random() * this.phrases.length)];

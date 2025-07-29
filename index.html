@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Speech Player</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .controls {
+            margin: 30px 0;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stop {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .current-phrase {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 24px;
+        }
+        
+        .countdown {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .phrases-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .phrases-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .phrases-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .phrases-list li {
+            padding: 8px 15px;
+            margin: 5px 0;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .bell-indicator {
+            color: #ff9800;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Random Speech Player</h1>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startPlayer()">Start Player</button>
+            <button id="stopBtn" onclick="stopPlayer()" class="stop" style="display: none;">Stop Player</button>
+        </div>
+        
+        <div class="status" id="status">
+            Click "Start Player" to begin
+        </div>
+        
+        <div class="phrases-list">
+            <h3>Phrases & Sounds:</h3>
+            <ul>
+                <li><span class="bell-indicator">🔔 Bell sound</span></li>
+                <li>🐉 Dragon</li>
+                <li>⬆️ Press forward</li>
+                <li>👉 Point</li>
+                <li>🤗 Embrace</li>
+                <li>✊ Hold</li>
+                <li>⬆️ Press up</li>
+                <li>🦁 Lion</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class RandomSpeechPlayer {
+            constructor() {
+                this.phrases = [
+                    "bell",
+                    "dragon",
+                    "press forward", 
+                    "point",
+                    "embrace",
+                    "hold",
+                    "press up",
+                    "lion"
+                ];
+                
+                this.isRunning = false;
+                this.timeoutId = null;
+                this.countdownInterval = null;
+                this.speechSynth = window.speechSynthesis;
+                
+                // Create bell sound
+                this.createBellSound();
+                
+                // Check for speech synthesis support
+                this.checkSpeechSupport();
+            }
+            
+            createBellSound() {
+                // Create a simple bell sound using Web Audio API
+                this.audioContext = null;
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn('Web Audio API not supported');
+                }
+            }
+            
+            checkSpeechSupport() {
+                if (!this.speechSynth) {
+                    console.warn('Speech synthesis not supported');
+                }
+            }
+            
+            playBellSound() {
+                if (this.audioContext) {
+                    // Create a bell-like sound using oscillators
+                    const now = this.audioContext.currentTime;
+                    
+                    // Main bell tone
+                    const osc1 = this.audioContext.createOscillator();
+                    const gain1 = this.audioContext.createGain();
+                    
+                    osc1.connect(gain1);
+                    gain1.connect(this.audioContext.destination);
+                    
+                    osc1.frequency.setValueAtTime(800, now);
+                    osc1.frequency.exponentialRampToValueAtTime(400, now + 0.5);
+                    
+                    gain1.gain.setValueAtTime(0.3, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+                    
+                    osc1.start(now);
+                    osc1.stop(now + 1.5);
+                    
+                    // Harmonic
+                    const osc2 = this.audioContext.createOscillator();
+                    const gain2 = this.audioContext.createGain();
+                    
+                    osc2.connect(gain2);
+                    gain2.connect(this.audioContext.destination);
+                    
+                    osc2.frequency.setValueAtTime(1200, now);
+                    osc2.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+                    
+                    gain2.gain.setValueAtTime(0.1, now);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, now + 1);
+                    
+                    osc2.start(now);
+                    osc2.stop(now + 1);
+                } else {
+                    // Fallback: just beep
+                    console.log('🔔 Bell sound (audio not available)');
+                }
+            }
+            
+            speakPhrase(phrase) {
+                if (phrase === "bell") {
+                    this.playBellSound();
+                    return;
+                }
+                
+                if (this.speechSynth) {
+                    // Cancel any ongoing speech
+                    this.speechSynth.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(phrase);
+                    utterance.rate = 1;
+                    utterance.pitch = 1;
+                    utterance.volume = 0.8;
+                    
+                    this.speechSynth.speak(utterance);
+                } else {
+                    console.log(`Speaking: ${phrase}`);
+                }
+            }
+            
+            updateStatus(message) {
+                document.getElementById('status').innerHTML = message;
+            }
+            
+            showCountdown(seconds, phrase) {
+                let remaining = seconds;
+                this.updateStatus(`
+                    <div class="countdown">Next in ${remaining} seconds...</div>
+                    <div>Will play: <span class="current-phrase">${phrase === 'bell' ? '🔔 Bell sound' : phrase}</span></div>
+                `);
+                
+                this.countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining > 0) {
+                        this.updateStatus(`
+                            <div class="countdown">Next in ${remaining} seconds...</div>
+                            <div>Will play: <span class="current-phrase">${phrase === 'bell' ? '🔔 Bell sound' : phrase}</span></div>
+                        `);
+                    } else {
+                        clearInterval(this.countdownInterval);
+                    }
+                }, 1000);
+            }
+            
+            start() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                
+                // Enable audio context on user interaction
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                
+                this.scheduleNext();
+            }
+            
+            stop() {
+                this.isRunning = false;
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+                
+                if (this.timeoutId) {
+                    clearTimeout(this.timeoutId);
+                    this.timeoutId = null;
+                }
+                
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                }
+                
+                if (this.speechSynth) {
+                    this.speechSynth.cancel();
+                }
+                
+                this.updateStatus('Player stopped');
+            }
+            
+            scheduleNext() {
+                if (!this.isRunning) return;
+                
+                // Random wait time between 2-10 seconds
+                const waitTime = Math.floor(Math.random() * 9) + 2;
+                
+                // Select random phrase
+                const phrase = this.phrases[Math.floor(Math.random() * this.phrases.length)];
+                
+                this.showCountdown(waitTime, phrase);
+                
+                this.timeoutId = setTimeout(() => {
+                    if (!this.isRunning) return;
+                    
+                    this.updateStatus(`
+                        <div class="current-phrase">Playing: ${phrase === 'bell' ? '🔔 Bell sound' : phrase}</div>
+                    `);
+                    
+                    this.speakPhrase(phrase);
+                    
+                    // Schedule next phrase
+                    setTimeout(() => {
+                        if (this.isRunning) {
+                            this.scheduleNext();
+                        }
+                    }, 1000);
+                    
+                }, waitTime * 1000);
+            }
+        }
+        
+        // Global instance
+        let player = new RandomSpeechPlayer();
+        
+        function startPlayer() {
+            player.start();
+        }
+        
+        function stopPlayer() {
+            player.stop();
+        }
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && player.speechSynth) {
+                player.speechSynth.cancel();
+            }
+        });
+    </script>
+</body>
+</html>

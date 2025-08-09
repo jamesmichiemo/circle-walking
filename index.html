@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Speech Player</title>
+    <title>Circle Walking</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -121,28 +121,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Random Speech Player</h1>
+        <h1>Circle Walking</h1></h1>
         
         <div class="controls">
-            <button id="startBtn" onclick="startPlayer()">Start Player</button>
-            <button id="stopBtn" onclick="stopPlayer()" class="stop" style="display: none;">Stop Player</button>
+            <button id="startBtn" onclick="startPlayer()">Begin</button>
+            <button id="stopBtn" onclick="stopPlayer()" class="stop" style="display: none;">Close</button>
         </div>
         
         <div class="status" id="status">
-            Click "Start Player" to begin
+            Click "Begin" to start
         </div>
         
         <div class="phrases-list">
-            <h3>Phrases & Sounds:</h3>
+            <h3>8 Mother Palms:</h3>
             <ul>
-                <li><span class="bell-indicator">🔔 Bell sound</span></li>
-                <li>🐉 Dragon</li>
-                <li>⬆️ Press forward</li>
-                <li>👉 Point</li>
-                <li>🤗 Embrace</li>
-                <li>✊ Hold</li>
-                <li>⬆️ Press up</li>
-                <li>🦁 Lion</li>
+                <li>Press up</li>
+                <li>Hold the sky</li>
+                <li>Embrace</li>
+                <li>Press forward and back</li>
+                <li>Point to Earth and Sky</li>
+                <li>Lion hold the ball</li>
+                <li>Dragon shows its claws</li>                                
+                <li>Change</li>
             </ul>
         </div>
     </div>
@@ -151,16 +151,16 @@
         class RandomSpeechPlayer {
             constructor() {
                 this.phrases = [
-                    "bell",
-                    "dragon",
-                    "press forward", 
-                    "point",
+                    "change",
+                    "dragon shows its claws",
+                    "press forward and back", 
+                    "point to earth and sky",
                     "embrace",
-                    "hold",
+                    "hold the sky",
                     "press up",
-                    "lion",
-                    "bell",
-                    "bell"
+                    "lion hold the ball",
+                    "change",
+                    "change"
                 ];
                 
                 this.isRunning = false;

@@ -66,6 +66,10 @@
             background: linear-gradient(45deg, #f44336, #d32f2f);
         }
         
+        .test {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+        }
+        
         .status {
             margin: 20px 0;
             padding: 15px;
@@ -113,19 +117,36 @@
             border-left: 4px solid #667eea;
         }
         
-        .bell-indicator {
-            color: #ff9800;
-            font-weight: bold;
+        .audio-status {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+        
+        .success {
+            color: #4CAF50;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Circle Walking</h1></h1>
+        <h1>Circle Walking</h1>
         
         <div class="controls">
+            <button id="testBtn" onclick="testAudio()" class="test">Test Audio</button>
             <button id="startBtn" onclick="startPlayer()">Begin</button>
             <button id="stopBtn" onclick="stopPlayer()" class="stop" style="display: none;">Close</button>
+        </div>
+        
+        <div class="audio-status" id="audioStatus">
+            Click "Test Audio" to check if sound is working
         </div>
         
         <div class="status" id="status">
@@ -167,33 +188,92 @@
                 this.timeoutId = null;
                 this.countdownInterval = null;
                 this.speechSynth = window.speechSynthesis;
+                this.audioContext = null;
+                this.audioReady = false;
+                this.speechReady = false;
                 
-                // Create bell sound
+                // Initialize audio systems
+                this.initializeAudio();
+            }
+            
+            initializeAudio() {
+                // Initialize Web Audio API
                 this.createBellSound();
                 
-                // Check for speech synthesis support
+                // Check speech synthesis
                 this.checkSpeechSupport();
+                
+                // Wait for voices to load
+                this.waitForVoices();
             }
             
             createBellSound() {
-                // Create a simple bell sound using Web Audio API
-                this.audioContext = null;
                 try {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioReady = true;
+                    this.updateAudioStatus();
                 } catch (e) {
-                    console.warn('Web Audio API not supported');
+                    console.warn('Web Audio API not supported:', e);
+                    this.audioReady = false;
+                    this.updateAudioStatus('Web Audio API not supported');
                 }
             }
             
             checkSpeechSupport() {
-                if (!this.speechSynth) {
+                if (this.speechSynth) {
+                    this.speechReady = true;
+                } else {
                     console.warn('Speech synthesis not supported');
+                    this.speechReady = false;
+                    this.updateAudioStatus('Speech synthesis not supported');
                 }
             }
             
-            playBellSound() {
-                if (this.audioContext) {
-                    // Create a bell-like sound using oscillators
+            waitForVoices() {
+                if (this.speechSynth) {
+                    const loadVoices = () => {
+                        const voices = this.speechSynth.getVoices();
+                        if (voices.length > 0) {
+                            console.log(`${voices.length} voices available`);
+                            this.speechReady = true;
+                            this.updateAudioStatus();
+                        }
+                    };
+                    
+                    // Try to load voices immediately
+                    loadVoices();
+                    
+                    // Also listen for the voices changed event
+                    this.speechSynth.addEventListener('voiceschanged', loadVoices);
+                }
+            }
+            
+            updateAudioStatus(errorMsg = null) {
+                const statusEl = document.getElementById('audioStatus');
+                if (errorMsg) {
+                    statusEl.innerHTML = `<span class="error">⚠️ ${errorMsg}</span>`;
+                } else if (this.audioReady && this.speechReady) {
+                    statusEl.innerHTML = '<span class="success">✅ Audio systems ready</span>';
+                } else {
+                    const audioState = this.audioReady ? '✅' : '❌';
+                    const speechState = this.speechReady ? '✅' : '❌';
+                    statusEl.innerHTML = `Audio: ${audioState} | Speech: ${speechState}`;
+                }
+            }
+            
+            async playBellSound() {
+                if (!this.audioContext) {
+                    console.log('🔔 Bell sound (Web Audio not available)');
+                    this.playFallbackBeep();
+                    return;
+                }
+
+                try {
+                    // Resume audio context if suspended
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+
                     const now = this.audioContext.currentTime;
                     
                     // Main bell tone
@@ -222,35 +302,77 @@
                     osc2.frequency.setValueAtTime(1200, now);
                     osc2.frequency.exponentialRampToValueAtTime(600, now + 0.3);
                     
-                    gain2.gain.setValueAtTime(0.1, now);
+                    gain2.gain.setValueAtTime(0.15, now);
                     gain2.gain.exponentialRampToValueAtTime(0.01, now + 1);
                     
                     osc2.start(now);
                     osc2.stop(now + 1);
-                } else {
-                    // Fallback: just beep
-                    console.log('🔔 Bell sound (audio not available)');
+
+                    console.log('🔔 Bell sound played successfully');
+                } catch (error) {
+                    console.error('Error playing bell sound:', error);
+                    this.playFallbackBeep();
                 }
             }
             
-            speakPhrase(phrase) {
+            playFallbackBeep() {
+                // Create a simple beep using HTML5 Audio
+                try {
+                    const beep = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIcBjaR1/LNeSsFJHfH8N2QQAoUXrTp66hVFA==");
+                    beep.volume = 0.3;
+                    beep.play().catch(e => console.log('Beep failed:', e));
+                } catch (e) {
+                    console.log('🔔 Bell (all audio failed)');
+                }
+            }
+            
+            async speakPhrase(phrase) {
                 if (phrase === "bell") {
-                    this.playBellSound();
+                    await this.playBellSound();
                     return;
                 }
                 
-                if (this.speechSynth) {
+                if (!this.speechSynth) {
+                    console.log(`Speaking: ${phrase} (Speech not available)`);
+                    return;
+                }
+
+                try {
                     // Cancel any ongoing speech
                     this.speechSynth.cancel();
+                    
+                    // Wait a moment to ensure cancel takes effect
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     
                     const utterance = new SpeechSynthesisUtterance(phrase);
                     utterance.rate = 1;
                     utterance.pitch = 1;
                     utterance.volume = 0.8;
                     
+                    // Try to use a good English voice
+                    const voices = this.speechSynth.getVoices();
+                    if (voices.length > 0) {
+                        const englishVoice = voices.find(voice => 
+                            voice.lang.startsWith('en') && !voice.name.includes('Google')
+                        ) || voices.find(voice => voice.lang.startsWith('en'));
+                        
+                        if (englishVoice) {
+                            utterance.voice = englishVoice;
+                        }
+                    }
+
+                    // Add error handling
+                    utterance.onerror = (event) => {
+                        console.error('Speech error:', event.error);
+                    };
+
+                    utterance.onstart = () => {
+                        console.log('Speaking:', phrase);
+                    };
+                    
                     this.speechSynth.speak(utterance);
-                } else {
-                    console.log(`Speaking: ${phrase}`);
+                } catch (error) {
+                    console.error('Error speaking phrase:', error);
                 }
             }
             
@@ -278,17 +400,22 @@
                 }, 1000);
             }
             
-            start() {
+            async start() {
                 if (this.isRunning) return;
+                
+                // Try to activate audio context first
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    try {
+                        await this.audioContext.resume();
+                        console.log('Audio context resumed');
+                    } catch (e) {
+                        console.warn('Could not resume audio context:', e);
+                    }
+                }
                 
                 this.isRunning = true;
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
-                
-                // Enable audio context on user interaction
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
-                }
                 
                 this.scheduleNext();
             }
@@ -315,6 +442,21 @@
                 this.updateStatus('Player stopped');
             }
             
+            async test() {
+                this.updateStatus('Testing audio systems...');
+                
+                // Test speech first
+                await this.speakPhrase('Audio test');
+                
+                // Wait a moment, then test bell
+                setTimeout(async () => {
+                    await this.playBellSound();
+                    setTimeout(() => {
+                        this.updateStatus('Audio test complete');
+                    }, 2000);
+                }, 2000);
+            }
+            
             scheduleNext() {
                 if (!this.isRunning) return;
                 
@@ -326,21 +468,21 @@
                 
                 this.showCountdown(waitTime, phrase);
                 
-                this.timeoutId = setTimeout(() => {
+                this.timeoutId = setTimeout(async () => {
                     if (!this.isRunning) return;
                     
                     this.updateStatus(`
                         <div class="current-phrase">Playing: ${phrase === 'bell' ? '🔔 Bell sound' : phrase}</div>
                     `);
                     
-                    this.speakPhrase(phrase);
+                    await this.speakPhrase(phrase);
                     
-                    // Schedule next phrase
+                    // Schedule next phrase with longer delay to ensure speech completes
                     setTimeout(() => {
                         if (this.isRunning) {
                             this.scheduleNext();
                         }
-                    }, 1000);
+                    }, 2000);
                     
                 }, waitTime * 1000);
             }
@@ -349,18 +491,34 @@
         // Global instance
         let player = new RandomSpeechPlayer();
         
-        function startPlayer() {
-            player.start();
+        async function startPlayer() {
+            await player.start();
         }
         
         function stopPlayer() {
             player.stop();
         }
         
+        async function testAudio() {
+            await player.test();
+        }
+        
         // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
             if (document.hidden && player.speechSynth) {
                 player.speechSynth.cancel();
+            }
+        });
+
+        // Auto-resume audio context on any user interaction
+        document.addEventListener('click', async function() {
+            if (player.audioContext && player.audioContext.state === 'suspended') {
+                try {
+                    await player.audioContext.resume();
+                    console.log('Audio context resumed on click');
+                } catch (e) {
+                    console.warn('Failed to resume audio context:', e);
+                }
             }
         });
     </script>

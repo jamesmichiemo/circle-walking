@@ -114,6 +114,12 @@
             color: #666;
         }
         
+        .timing-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
         .metronome-visualizer {
             width: 20px;
             height: 20px;
@@ -186,6 +192,7 @@
         <div class="metronome-info" id="metronomeInfo" style="display: none;">
             <div class="metronome-status" id="metronomeStatus">Metronome: Starting</div>
             <div class="metronome-bpm" id="metronomeBpm">BPM: 60</div>
+            <div class="timing-info" id="timingInfo">Prompt timing: 2-20 seconds</div>
             <div class="metronome-visualizer" id="metronomeViz"></div>
         </div>
         
@@ -201,7 +208,7 @@
                 <li>Embrace</li>
                 <li>Press forward and back</li>
                 <li>Point to Earth and Sky</li>
-                <li>Lion hold the ball</li>
+                <li>Lion holds the ball</li>
                 <li>Dragon shows its claws</li>                                
                 <li>Change</li>
             </ul>
@@ -219,7 +226,7 @@
                     "embrace",
                     "hold the sky",
                     "press up",
-                    "lion hold the ball",
+                    "lion holds the ball",
                     "change",
                     "change"
                 ];
@@ -308,6 +315,34 @@
                     const audioState = this.audioReady ? '✅' : '❌';
                     const speechState = this.speechReady ? '✅' : '❌';
                     statusEl.innerHTML = `Audio: ${audioState} | Speech: ${speechState}`;
+                }
+            }
+            
+            // Calculate dynamic timing range based on current BPM
+            getTimingRange() {
+                // Normalize BPM to a 0-1 scale
+                const bpmProgress = (this.currentBPM - this.minBPM) / (this.maxBPM - this.minBPM);
+                
+                // At minBPM (45): 2-20 seconds
+                // At maxBPM (130): 2-8 seconds
+                // Linear interpolation
+                const minSeconds = 2;
+                const maxSecondsAtMin = 20;
+                const maxSecondsAtMax = 8;
+                
+                const maxSeconds = maxSecondsAtMin - (bpmProgress * (maxSecondsAtMin - maxSecondsAtMax));
+                
+                return {
+                    min: minSeconds,
+                    max: Math.round(maxSeconds)
+                };
+            }
+            
+            updateTimingDisplay() {
+                const range = this.getTimingRange();
+                const timingEl = document.getElementById('timingInfo');
+                if (timingEl) {
+                    timingEl.textContent = `Prompt timing: ${range.min}-${range.max} seconds`;
                 }
             }
             
@@ -430,6 +465,9 @@
                 
                 statusEl.textContent = `Metronome: ${phase} (${minutes}m)`;
                 bpmEl.textContent = `BPM: ${Math.round(this.currentBPM)}`;
+                
+                // Update timing display
+                this.updateTimingDisplay();
             }
             
             startMetronome() {
@@ -547,8 +585,10 @@
             
             showCountdown(seconds, phrase) {
                 let remaining = seconds;
+                const range = this.getTimingRange();
+                
                 this.updateStatus(`
-                    <div class="countdown">Next in ${remaining} seconds...</div>
+                    <div class="countdown">Next in ${remaining} seconds (${range.min}-${range.max}s range)</div>
                     <div>Will play: <span class="current-phrase">${phrase === 'bell' ? '🔔 Bell sound' : phrase}</span></div>
                 `);
                 
@@ -556,7 +596,7 @@
                     remaining--;
                     if (remaining > 0) {
                         this.updateStatus(`
-                            <div class="countdown">Next in ${remaining} seconds...</div>
+                            <div class="countdown">Next in ${remaining} seconds (${range.min}-${range.max}s range)</div>
                             <div>Will play: <span class="current-phrase">${phrase === 'bell' ? '🔔 Bell sound' : phrase}</span></div>
                         `);
                     } else {
@@ -639,8 +679,11 @@
             scheduleNext() {
                 if (!this.isRunning) return;
                 
-                // Random wait time between 2-30 seconds
-                const waitTime = Math.floor(Math.random() * 29) + 2;
+                // Get current timing range based on BPM
+                const timingRange = this.getTimingRange();
+                
+                // Random wait time within the dynamic range
+                const waitTime = Math.floor(Math.random() * (timingRange.max - timingRange.min + 1)) + timingRange.min;
                 
                 // Select random phrase
                 const phrase = this.phrases[Math.floor(Math.random() * this.phrases.length)];

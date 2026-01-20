@@ -10,7 +10,7 @@
             max-width: 600px;
             margin: 50px auto;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8B0000 0%, #A0522D 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -19,7 +19,7 @@
         }
         
         .container {
-            background: rgba(255, 255, 255, 0.95);
+            background: #F5F5DC;
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
@@ -39,7 +39,7 @@
         }
         
         button {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+            background: linear-gradient(45deg, #2F4F2F, #1C3A1C);
             color: white;
             border: none;
             padding: 15px 30px;
@@ -63,11 +63,11 @@
         }
         
         .stop {
-            background: linear-gradient(45deg, #f44336, #d32f2f);
+            background: linear-gradient(45deg, #8B0000, #660000);
         }
         
         .test {
-            background: linear-gradient(45deg, #ff9800, #f57c00);
+            background: linear-gradient(45deg, #B8860B, #8B6914);
         }
         
         .status {
@@ -85,7 +85,7 @@
         
         .current-phrase {
             font-weight: bold;
-            color: #667eea;
+            color: #8B0000;
             font-size: 24px;
         }
         
@@ -95,8 +95,8 @@
         }
         
         .metronome-info {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            background: rgba(139, 0, 0, 0.1);
+            border: 1px solid rgba(139, 0, 0, 0.3);
             border-radius: 10px;
             padding: 15px;
             margin: 20px 0;
@@ -104,7 +104,7 @@
         
         .metronome-status {
             font-size: 16px;
-            color: #667eea;
+            color: #8B0000;
             font-weight: bold;
             margin-bottom: 5px;
         }
@@ -124,7 +124,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #667eea;
+            background: #8B0000;
             margin: 10px auto;
             transition: all 0.1s ease;
         }
@@ -152,9 +152,9 @@
         .phrases-list li {
             padding: 8px 15px;
             margin: 5px 0;
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(139, 0, 0, 0.1);
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #8B0000;
         }
         
         .audio-status {
@@ -167,17 +167,17 @@
         }
         
         .error {
-            color: #f44336;
+            color: #8B0000;
         }
         
         .success {
-            color: #4CAF50;
+            color: #2F4F2F;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Circle Walking</h1>
+        <h1>Spontaneous Prompts for Circle Walking</h1>
         
         <div class="controls">
             <button id="testBtn" onclick="testAudio()" class="test">Test Audio</button>
@@ -311,10 +311,10 @@
                 if (errorMsg) {
                     statusEl.innerHTML = `<span class="error">⚠️ ${errorMsg}</span>`;
                 } else if (this.audioReady && this.speechReady) {
-                    statusEl.innerHTML = '<span class="success">✅ Audio systems ready</span>';
+                    statusEl.innerHTML = '<span class="success">☯ Audio systems ready</span>';
                 } else {
-                    const audioState = this.audioReady ? '✅' : '❌';
-                    const speechState = this.speechReady ? '✅' : '❌';
+                    const audioState = this.audioReady ? '☯' : '❌';
+                    const speechState = this.speechReady ? '☯' : '❌';
                     statusEl.innerHTML = `Audio: ${audioState} | Speech: ${speechState}`;
                 }
             }

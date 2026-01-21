@@ -287,23 +287,25 @@
                 }
             }
             
+
             waitForVoices() {
-                if (this.speechSynth) {
-                    const loadVoices = () => {
-                        const voices = this.speechSynth.getVoices();
-                        if (voices.length > 0) {
-                            console.log(`${voices.length} voices available`);
-                            this.speechReady = true;
-                            this.updateAudioStatus();
-                        }
-                    };
-                    
-                    // Try to load voices immediately
-                    loadVoices();
-                    
-                    // Also listen for the voices changed event
-                    this.speechSynth.addEventListener('voiceschanged', loadVoices);
-                }
+              if (this.speechSynth) {
+                const loadVoices = () => {
+                  const voices = this.speechSynth.getVoices();
+                  if (voices.length > 0) {
+                    console.log(`${voices.length} voices available`);
+                    this.speechReady = true;
+                    this.updateAudioStatus();
+                
+                    // Pick voice index 1 instead of 0
+                    this.selectedVoice = voices[1] || voices[0];
+                    console.log('Selected voice:', this.selectedVoice.name);
+                  }
+                };
+        
+                loadVoices();
+                this.speechSynth.addEventListener('voiceschanged', loadVoices);
+              }
             }
             
             updateAudioStatus(errorMsg = null) {
@@ -519,66 +521,51 @@
                 document.getElementById('metronomeInfo').style.display = 'none';
             }
             
-            async speakPhrase(phrase) {
-                if (phrase === "bell") {
-                    await this.playBellSound();
-                    return;
-                }
-                
-                if (!this.speechSynth) {
-                    console.log(`Speaking: ${phrase} (Speech not available)`);
-                    return;
-                }
+async speakPhrase(phrase) {
+    if (phrase === "bell") {
+        await this.playBellSound();
+        return;
+    }
+    
+    if (!this.speechSynth) {
+        console.log(`Speaking: ${phrase} (Speech not available)`);
+        return;
+    }
 
-                try {
-                    // Cancel any ongoing speech
-                    this.speechSynth.cancel();
-                    
-                    // Wait a moment to ensure cancel takes effect
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    // Add a small delay before speaking to prevent cutoff
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    
-                    const utterance = new SpeechSynthesisUtterance(phrase);
-                    utterance.rate = 1;
-                    utterance.pitch = 1;
-                    utterance.volume = 0.8;
-                    
-                    // Try to use a good English voice
-                    const voices = this.speechSynth.getVoices();
-                    if (voices.length > 0) {
-                        const englishVoice = voices.find(voice => 
-                            voice.lang.startsWith('en') && !voice.name.includes('Google')
-                        ) || voices.find(voice => voice.lang.startsWith('en'));
-                        
-                        if (englishVoice) {
-                            utterance.voice = englishVoice;
-                        }
-                    }
+    try {
+        this.speechSynth.cancel();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 0.8;
+        
+        // Use the selected voice
+        if (this.selectedVoice) {
+            utterance.voice = this.selectedVoice;
+        }
 
-                    // Add error handling
-                    utterance.onerror = (event) => {
-                        console.error('Speech error:', event.error);
-                    };
+        utterance.onerror = (event) => {
+            console.error('Speech error:', event.error);
+        };
 
-                    utterance.onstart = () => {
-                        console.log('Speaking:', phrase);
-                    };
-                    
-                    this.speechSynth.speak(utterance);
-                    
-                    // Wait for speech to complete
-                    return new Promise((resolve) => {
-                        utterance.onend = resolve;
-                        utterance.onerror = resolve;
-                        // Fallback timeout
-                        setTimeout(resolve, 3000);
-                    });
-                } catch (error) {
-                    console.error('Error speaking phrase:', error);
-                }
-            }
+        utterance.onstart = () => {
+            console.log('Speaking:', phrase);
+        };
+        
+        this.speechSynth.speak(utterance);
+        
+        return new Promise((resolve) => {
+            utterance.onend = resolve;
+            utterance.onerror = resolve;
+            setTimeout(resolve, 3000);
+        });
+    } catch (error) {
+        console.error('Error speaking phrase:', error);
+    }
+}
             
             updateStatus(message) {
                 document.getElementById('status').innerHTML = message;

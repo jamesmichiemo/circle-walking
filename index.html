@@ -183,6 +183,11 @@
             <button id="testBtn" onclick="testAudio()" class="test">Test Audio</button>
             <button id="startBtn" onclick="startPlayer()">Begin</button>
             <button id="stopBtn" onclick="stopPlayer()" class="stop" style="display: none;">Close</button>
+            <div style="margin-top: 15px;">
+                <label style="font-size: 14px; color: #666; cursor: pointer; user-select: none;">
+                    <input type="checkbox" id="muteMetCheckbox" style="margin-right: 6px; cursor: pointer;">Mute metronome
+                </label>
+            </div>
         </div>
         
         <div class="audio-status" id="audioStatus">
@@ -239,6 +244,7 @@
                 this.audioContext = null;
                 this.audioReady = false;
                 this.speechReady = false;
+                this.muteMetronome = false;
                 
                 // Metronome properties
                 this.metronomeInterval = null;
@@ -416,20 +422,23 @@
 
                     const now = this.audioContext.currentTime;
                     
-                    // Create a short, sharp tick sound
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
-                    
-                    osc.connect(gain);
-                    gain.connect(this.audioContext.destination);
-                    
-                    osc.frequency.setValueAtTime(1000, now);
-                    
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    
-                    osc.start(now);
-                    osc.stop(now + 0.1);
+                    // Only play the tick sound if not muted
+                    if (!this.muteMetronome) {
+                        // Create a short, sharp tick sound
+                        const osc = this.audioContext.createOscillator();
+                        const gain = this.audioContext.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(this.audioContext.destination);
+                        
+                        osc.frequency.setValueAtTime(1000, now);
+                        
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                    }
 
                     // Update visualizer
                     const viz = document.getElementById('metronomeViz');
@@ -595,6 +604,8 @@ async speakPhrase(phrase) {
             
             async start() {
                 if (this.isRunning) return;
+                
+                this.muteMetronome = document.getElementById('muteMetCheckbox').checked;
                 
                 // Try to activate audio context first
                 if (this.audioContext && this.audioContext.state === 'suspended') {

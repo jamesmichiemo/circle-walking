@@ -198,6 +198,7 @@
             <div class="metronome-status" id="metronomeStatus">Metronome: Starting</div>
             <div class="metronome-bpm" id="metronomeBpm">BPM: 60</div>
             <div class="timing-info" id="timingInfo">Prompt timing: 2-20 seconds</div>
+            <div id="beatCounter" style="font-size: 16px; color: #8B0000; font-weight: bold; margin-top: 10px;">Beats: 0 | ~0.00km | 0.0% to 10k</div>
             <div class="metronome-visualizer" id="metronomeViz"></div>
         </div>
         
@@ -255,6 +256,7 @@
                 this.bpmDirection = 1; // 1 for increasing, -1 for decreasing
                 this.metronomePlaying = false;
                 this.sessionStartTime = 0;
+                this.totalBeats = 0;
                 
                 // Initialize audio systems
                 this.initializeAudio();
@@ -415,6 +417,10 @@
                 }
 
                 try {
+                    // Increment beat counter
+                    this.totalBeats++;
+                    this.updateBeatCounter();
+                    
                     // Resume audio context if suspended
                     if (this.audioContext.state === 'suspended') {
                         await this.audioContext.resume();
@@ -480,6 +486,16 @@
                 
                 // Update timing display
                 this.updateTimingDisplay();
+            }
+            
+            updateBeatCounter() {
+                const counterEl = document.getElementById('beatCounter');
+                if (counterEl) {
+                    // Calculate estimated distance at 0.75m average stride
+                    const distanceKm = (this.totalBeats * 0.75 / 1000).toFixed(2);
+                    const progressPercent = ((this.totalBeats / 10000) * 100).toFixed(1);
+                    counterEl.textContent = `Beats: ${this.totalBeats.toLocaleString()} | ~${distanceKm}km | ${progressPercent}% to 10k`;
+                }
             }
             
             startMetronome() {
@@ -651,6 +667,9 @@ async speakPhrase(phrase) {
                 
                 // Stop metronome
                 this.stopMetronome();
+                
+                // Reset beat counter
+                this.totalBeats = 0;
                 
                 this.updateStatus('Player stopped');
             }

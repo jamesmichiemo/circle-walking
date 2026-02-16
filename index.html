@@ -198,7 +198,7 @@
             <div class="metronome-status" id="metronomeStatus">Metronome: Starting</div>
             <div class="metronome-bpm" id="metronomeBpm">BPM: 60</div>
             <div class="timing-info" id="timingInfo">Prompt timing: 2-20 seconds</div>
-            <div id="beatCounter" style="font-size: 16px; color: #8B0000; font-weight: bold; margin-top: 10px;">Beats: 0 | ~0.00km | 0.0% to 10k</div>
+            <div id="beatCounter" style="font-size: 16px; color: #8B0000; font-weight: bold; margin-top: 10px;">Steps: 0 | 0.00km / 10km | 0.0%</div>
             <div class="metronome-visualizer" id="metronomeViz"></div>
         </div>
         
@@ -491,10 +491,14 @@
             updateBeatCounter() {
                 const counterEl = document.getElementById('beatCounter');
                 if (counterEl) {
-                    // Calculate estimated distance at 0.75m average stride
+                    // Calculate distance at 0.75m average stride
                     const distanceKm = (this.totalBeats * 0.75 / 1000).toFixed(2);
-                    const progressPercent = ((this.totalBeats / 10000) * 100).toFixed(1);
-                    counterEl.textContent = `Beats: ${this.totalBeats.toLocaleString()} | ~${distanceKm}km | ${progressPercent}% to 10k`;
+                    
+                    // Calculate beats needed for 10km at 0.75m stride
+                    const beatsFor10km = Math.ceil(10000 / 0.75);
+                    const progressPercent = ((this.totalBeats / beatsFor10km) * 100).toFixed(1);
+                    
+                    counterEl.textContent = `Steps: ${this.totalBeats.toLocaleString()} | ${distanceKm}km / 10km | ${progressPercent}%`;
                 }
             }
             
